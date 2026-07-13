@@ -84,7 +84,7 @@ export class MenuController {
     const motionClass = this.settings.motion ? "" : "reduced-motion";
     const layoutClass = this.view === "main" ? "menu-main-layout" : "menu-sub-layout";
     this.root.innerHTML = `
-      <section class="menu-shell ${motionClass} ${layoutClass} menu-layout-v3">
+      <section class="menu-shell ${motionClass} ${layoutClass} menu-fit-v5">
         <div class="menu-bg"></div><div class="menu-shadow"></div>
         <div class="core-glow"></div><div class="core-ring r1"></div><div class="core-ring r2"></div>
         ${this.settings.scanlines ? '<div class="scanlines"></div>' : ""}
@@ -104,6 +104,11 @@ export class MenuController {
         <aside id="world-preview" class="world-preview"></aside>
         <div class="menu-hint">${i18n.t("nav.hint")}</div>
       </section>`;
+
+    if (this.view === "main") {
+      this.fitMainMenu();
+      requestAnimationFrame(() => this.fitMainMenu());
+    }
   }
 
   renderMain() {
@@ -141,75 +146,214 @@ export class MenuController {
     const shell = this.root.querySelector(".menu-shell");
     const stack = shell?.querySelector(".menu-left-stack");
     const statusPanel = stack?.querySelector(".status-panel");
+    const statusHead = statusPanel?.querySelector(".status-head");
+    const statusRows = [...(statusPanel?.querySelectorAll(".status-row") || [])];
     const menuView = stack?.querySelector(".menu-view");
     const menuOptions = stack?.querySelector(".menu-options");
-    const buttons = [...(stack?.querySelectorAll(".menu-option") || [])];
+    const buttons = [...(menuOptions?.querySelectorAll(".menu-option") || [])];
 
-    if (!shell || !stack || !statusPanel || !menuView || !menuOptions || buttons.length === 0) {
+    if (
+      !shell ||
+      !stack ||
+      !statusPanel ||
+      !menuView ||
+      !menuOptions ||
+      buttons.length === 0
+    ) {
       return;
     }
 
-    const width = shell.clientWidth || window.innerWidth;
-    const height = shell.clientHeight || window.innerHeight;
-    const count = buttons.length;
+    const visualViewport = window.visualViewport;
+    const viewportWidth = Math.max(
+      320,
+      Math.round(visualViewport?.width || window.innerWidth || shell.clientWidth),
+    );
+    const viewportHeight = Math.max(
+      420,
+      Math.round(visualViewport?.height || window.innerHeight || shell.clientHeight),
+    );
 
-    const buttonHeight = height <= 650 ? 28 : height <= 800 ? 31 : 34;
-    const fontSize = height <= 650 ? 12.5 : height <= 800 ? 14 : 15.5;
-    const buttonGap = height <= 650 ? 2 : 4;
-    const panelGap = height <= 650 ? 12 : height <= 800 ? 16 : 20;
-    const menuWidth = width <= 760
-      ? Math.max(270, width - 30)
-      : clamp(width * 0.29, 330, 405);
+    const itemCount = buttons.length;
+    const compactScreen = viewportHeight < 760;
+    const veryCompactScreen = viewportHeight < 620;
 
-    shell.classList.add("menu-compact-final");
+    const outerTop = veryCompactScreen ? 12 : compactScreen ? 16 : 22;
+    const outerBottom = veryCompactScreen ? 22 : 30;
+    const panelGap = veryCompactScreen ? 10 : compactScreen ? 14 : 18;
 
+    const menuWidth =
+      viewportWidth <= 720
+        ? Math.max(280, viewportWidth - 28)
+        : clamp(viewportWidth * 0.31, 350, 430);
+
+    // El panel superior también se compacta. Así no roba altura al menú.
+    const panelFont = veryCompactScreen ? 9 : compactScreen ? 10 : 11;
+    const panelPaddingY = veryCompactScreen ? 7 : compactScreen ? 9 : 11;
+    const panelPaddingX = veryCompactScreen ? 11 : 14;
+    const rowPadding = veryCompactScreen ? 0 : 1;
+
+    shell.classList.add("menu-layout-ready");
+
+    stack.style.setProperty("position", "absolute", "important");
+    stack.style.setProperty("left", "clamp(16px, 4vw, 54px)", "important");
+    stack.style.setProperty("top", `${outerTop}px`, "important");
+    stack.style.setProperty("bottom", `${outerBottom}px`, "important");
     stack.style.setProperty("width", `${Math.round(menuWidth)}px`, "important");
+    stack.style.setProperty("height", "auto", "important");
+    stack.style.setProperty("max-height", "none", "important");
+    stack.style.setProperty("display", "grid", "important");
+    stack.style.setProperty(
+      "grid-template-rows",
+      "auto minmax(0, 1fr)",
+      "important",
+    );
+    stack.style.setProperty("align-content", "start", "important");
     stack.style.setProperty("gap", `${panelGap}px`, "important");
+    stack.style.setProperty("overflow", "hidden", "important");
 
+    statusPanel.style.setProperty("position", "relative", "important");
+    statusPanel.style.setProperty("inset", "auto", "important");
     statusPanel.style.setProperty("width", "100%", "important");
-    statusPanel.style.setProperty("padding", height <= 700 ? "10px 14px" : "12px 15px", "important");
-    statusPanel.style.setProperty("font-size", height <= 700 ? "10px" : "11px", "important");
-    statusPanel.style.setProperty("line-height", "1.18", "important");
+    statusPanel.style.setProperty(
+      "padding",
+      `${panelPaddingY}px ${panelPaddingX}px`,
+      "important",
+    );
+    statusPanel.style.setProperty("margin", "0", "important");
+    statusPanel.style.setProperty("font-size", `${panelFont}px`, "important");
+    statusPanel.style.setProperty("line-height", "1.15", "important");
+
+    if (statusHead) {
+      statusHead.style.setProperty(
+        "margin-bottom",
+        veryCompactScreen ? "4px" : "6px",
+        "important",
+      );
+      statusHead.style.setProperty(
+        "padding-bottom",
+        veryCompactScreen ? "5px" : "7px",
+        "important",
+      );
+    }
+
+    statusRows.forEach((row) => {
+      row.style.setProperty(
+        "padding",
+        `${rowPadding}px 0`,
+        "important",
+      );
+      row.style.setProperty("min-height", "0", "important");
+    });
+
+    const stackHeight = Math.max(
+      260,
+      viewportHeight - outerTop - outerBottom,
+    );
+    const panelHeight = Math.ceil(statusPanel.getBoundingClientRect().height);
+    const availableMenuHeight = Math.max(
+      150,
+      stackHeight - panelHeight - panelGap,
+    );
+
+    const buttonGap = veryCompactScreen ? 2 : compactScreen ? 3 : 4;
+    const maximumButtonHeight = veryCompactScreen ? 27 : compactScreen ? 30 : 33;
+    const minimumButtonHeight = veryCompactScreen ? 23 : 25;
+
+    const calculatedButtonHeight = Math.floor(
+      (availableMenuHeight - buttonGap * Math.max(0, itemCount - 1)) /
+        itemCount,
+    );
+
+    const buttonHeight = clamp(
+      calculatedButtonHeight,
+      minimumButtonHeight,
+      maximumButtonHeight,
+    );
+
+    const totalMenuHeight =
+      itemCount * buttonHeight +
+      Math.max(0, itemCount - 1) * buttonGap;
 
     menuView.style.setProperty("position", "relative", "important");
     menuView.style.setProperty("inset", "auto", "important");
     menuView.style.setProperty("width", "100%", "important");
-    menuView.style.setProperty("overflow", "visible", "important");
+    menuView.style.setProperty("height", "100%", "important");
+    menuView.style.setProperty("min-height", "0", "important");
+    menuView.style.setProperty("max-height", "100%", "important");
+    menuView.style.setProperty("margin", "0", "important");
+    menuView.style.setProperty("padding", "0", "important");
+    menuView.style.setProperty(
+      "overflow-y",
+      totalMenuHeight > availableMenuHeight ? "auto" : "hidden",
+      "important",
+    );
+    menuView.style.setProperty("overflow-x", "hidden", "important");
+    menuView.style.setProperty("scrollbar-width", "thin", "important");
 
     menuOptions.style.setProperty("display", "grid", "important");
-    menuOptions.style.setProperty("grid-auto-rows", `${buttonHeight}px`, "important");
+    menuOptions.style.setProperty(
+      "grid-template-rows",
+      `repeat(${itemCount}, ${buttonHeight}px)`,
+      "important",
+    );
+    menuOptions.style.setProperty("grid-auto-rows", "unset", "important");
     menuOptions.style.setProperty("gap", `${buttonGap}px`, "important");
     menuOptions.style.setProperty("width", "100%", "important");
-    menuOptions.style.setProperty("height", "auto", "important");
+    menuOptions.style.setProperty("height", `${totalMenuHeight}px`, "important");
+    menuOptions.style.setProperty("min-height", "0", "important");
+    menuOptions.style.setProperty("padding", "0 5px 0 0", "important");
+    menuOptions.style.setProperty("margin", "0", "important");
+    menuOptions.style.setProperty("align-content", "start", "important");
     menuOptions.style.setProperty("overflow", "visible", "important");
 
-    const longestLabel = Math.max(...buttons.map((button) => button.textContent.trim().length));
-    const adjustedFont = longestLabel > 21 ? fontSize * 0.86 : longestLabel > 17 ? fontSize * 0.93 : fontSize;
+    const longestLabel = Math.max(
+      ...buttons.map((button) => button.textContent.trim().length),
+    );
+
+    let fontSize =
+      buttonHeight <= 24
+        ? 11
+        : buttonHeight <= 27
+          ? 12
+          : buttonHeight <= 30
+            ? 13
+            : 14;
+
+    if (longestLabel > 20) fontSize -= 1;
+    if (viewportWidth < 700) fontSize -= 0.5;
+    fontSize = Math.max(10.5, fontSize);
+
+    const leftPadding = buttonHeight <= 27 ? 43 : 48;
+    const markerLeft = buttonHeight <= 27 ? 12 : 14;
+    const markerWidth = buttonHeight <= 27 ? 21 : 23;
 
     buttons.forEach((button) => {
+      button.style.setProperty("box-sizing", "border-box", "important");
+      button.style.setProperty("position", "relative", "important");
+      button.style.setProperty("display", "flex", "important");
+      button.style.setProperty("align-items", "center", "important");
       button.style.setProperty("width", "100%", "important");
       button.style.setProperty("height", `${buttonHeight}px`, "important");
       button.style.setProperty("min-height", `${buttonHeight}px`, "important");
       button.style.setProperty("max-height", `${buttonHeight}px`, "important");
-      button.style.setProperty("padding", "0 12px 0 52px", "important");
-      button.style.setProperty("font-size", `${adjustedFont.toFixed(1)}px`, "important");
+      button.style.setProperty(
+        "padding",
+        `0 10px 0 ${leftPadding}px`,
+        "important",
+      );
+      button.style.setProperty("margin", "0", "important");
+      button.style.setProperty("font-size", `${fontSize}px`, "important");
       button.style.setProperty("line-height", "1", "important");
-      button.style.setProperty("letter-spacing", ".09em", "important");
-    });
+      button.style.setProperty("letter-spacing", ".085em", "important");
+      button.style.setProperty("white-space", "nowrap", "important");
+      button.style.setProperty("transform-origin", "left center", "important");
 
-    buttons.forEach((button) => {
       button.querySelectorAll(".marker, .icon").forEach((element) => {
-        element.style.setProperty("left", "15px", "important");
-        element.style.setProperty("width", "24px", "important");
+        element.style.setProperty("left", `${markerLeft}px`, "important");
+        element.style.setProperty("width", `${markerWidth}px`, "important");
         element.style.setProperty("font-size", ".72em", "important");
       });
     });
-
-    const panelHeight = statusPanel.getBoundingClientRect().height;
-    const totalMenuHeight = count * buttonHeight + Math.max(0, count - 1) * buttonGap;
-    const available = height - stack.getBoundingClientRect().top - panelHeight - panelGap - 34;
-    menuView.style.setProperty("max-height", `${Math.max(buttonHeight, available)}px`, "important");
-    menuView.style.setProperty("overflow-y", totalMenuHeight > available ? "auto" : "visible", "important");
   }
 
   option(item, index) {
