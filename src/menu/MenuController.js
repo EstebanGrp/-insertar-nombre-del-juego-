@@ -26,6 +26,10 @@ function nextValue(current, values) {
   return values[(Math.max(0, index) + 1) % values.length];
 }
 
+function clamp(value, minimum, maximum) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
 export class MenuController {
   constructor({ root, saveManager, startWorld }) {
     this.root = root;
@@ -36,11 +40,15 @@ export class MenuController {
     this.view = "main";
     this.settings = saveManager.getSettings();
     this.audioContext = null;
+    this.resizeFrame = 0;
     this.onKey = this.onKey.bind(this);
+    this.onResize = this.onResize.bind(this);
   }
 
   init() {
     document.addEventListener("keydown", this.onKey);
+    window.addEventListener("resize", this.onResize, { passive: true });
+    window.visualViewport?.addEventListener("resize", this.onResize, { passive: true });
     this.renderMain();
   }
 
@@ -116,6 +124,76 @@ export class MenuController {
     this.shell(`<div class="menu-options">${this.items.map((item, index) => this.option(item, index)).join("")}</div>`);
     this.bindOptions();
     this.updateSelection(false);
+    requestAnimationFrame(() => this.fitMainMenu());
+  }
+
+  onResize() {
+    cancelAnimationFrame(this.resizeFrame);
+    this.resizeFrame = requestAnimationFrame(() => this.fitMainMenu());
+  }
+
+  fitMainMenu() {
+    if (this.view !== "main" || this.root.classList.contains("hidden")) return;
+
+    const shell = this.root.querySelector(".menu-shell");
+    const statusPanel = shell?.querySelector(".status-panel");
+    const menuView = shell?.querySelector(".menu-view");
+    const buttons = [...(shell?.querySelectorAll(".menu-option") || [])];
+
+    if (!shell || !statusPanel || !menuView || buttons.length === 0) return;
+
+    const shellRect = shell.getBoundingClientRect();
+    const panelRect = statusPanel.getBoundingClientRect();
+    const viewportWidth = shellRect.width || window.innerWidth;
+    const viewportHeight = shellRect.height || window.innerHeight;
+    const itemCount = buttons.length;
+
+    // El menú siempre comienza debajo del panel de estado, nunca encima de él.
+    const panelBottom = panelRect.bottom - shellRect.top;
+    const minimumTop = panelBottom + clamp(viewportHeight * 0.012, 7, 13);
+    const preferredTop = viewportHeight * (viewportWidth <= 760 ? 0.38 : 0.30);
+    let menuTop = Math.max(minimumTop, preferredTop);
+
+    // Reserva espacio para la ayuda inferior y el borde de la pantalla.
+    const bottomReserve = clamp(viewportHeight * 0.065, 38, 62);
+    let availableHeight = viewportHeight - menuTop - bottomReserve;
+
+    const gap = clamp(Math.floor(viewportHeight * 0.008), 4, 8);
+    let itemHeight = Math.floor(
+      (availableHeight - gap * Math.max(0, itemCount - 1)) / itemCount,
+    );
+
+    itemHeight = clamp(itemHeight, 38, 54);
+
+    // Si la pantalla es muy baja, recoloca el menú para que todos los botones quepan.
+    const totalHeight = itemHeight * itemCount + gap * Math.max(0, itemCount - 1);
+    if (menuTop + totalHeight > viewportHeight - bottomReserve) {
+      menuTop = Math.max(minimumTop, viewportHeight - bottomReserve - totalHeight);
+      availableHeight = viewportHeight - menuTop - bottomReserve;
+    }
+
+    const longestLabel = Math.max(
+      0,
+      ...buttons.map((button) => button.textContent.trim().length),
+    );
+    const labelFactor = longestLabel > 22 ? 0.80 : longestLabel > 18 ? 0.90 : 1;
+    const fontSize = clamp(itemHeight * 0.43 * labelFactor, 14, 22);
+
+    const menuWidth = viewportWidth <= 760
+      ? Math.max(280, viewportWidth - 28)
+      : clamp(viewportWidth * 0.38, 350, 520);
+
+    const leftPadding = clamp(itemHeight * 1.65, 62, 84);
+    const iconLeft = clamp(itemHeight * 0.46, 18, 25);
+
+    shell.classList.add("menu-autofit");
+    shell.style.setProperty("--menu-auto-top", `${Math.round(menuTop)}px`);
+    shell.style.setProperty("--menu-auto-width", `${Math.round(menuWidth)}px`);
+    shell.style.setProperty("--menu-auto-height", `${Math.round(itemHeight)}px`);
+    shell.style.setProperty("--menu-auto-gap", `${Math.round(gap)}px`);
+    shell.style.setProperty("--menu-auto-font", `${fontSize.toFixed(1)}px`);
+    shell.style.setProperty("--menu-auto-left-padding", `${Math.round(leftPadding)}px`);
+    shell.style.setProperty("--menu-auto-icon-left", `${Math.round(iconLeft)}px`);
   }
 
   option(item, index) {
