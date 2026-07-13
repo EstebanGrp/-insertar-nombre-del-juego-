@@ -84,7 +84,7 @@ export class MenuController {
     const motionClass = this.settings.motion ? "" : "reduced-motion";
     const layoutClass = this.view === "main" ? "menu-main-layout" : "menu-sub-layout";
     this.root.innerHTML = `
-      <section class="menu-shell ${motionClass} ${layoutClass}">
+      <section class="menu-shell ${motionClass} ${layoutClass} menu-layout-v3">
         <div class="menu-bg"></div><div class="menu-shadow"></div>
         <div class="core-glow"></div><div class="core-ring r1"></div><div class="core-ring r2"></div>
         ${this.settings.scanlines ? '<div class="scanlines"></div>' : ""}
@@ -151,11 +151,18 @@ export class MenuController {
     const viewportHeight = shell.clientHeight || window.innerHeight;
     const itemCount = buttons.length;
     const stackStyle = getComputedStyle(stack);
-    const stackGap = parseFloat(stackStyle.rowGap || stackStyle.gap) || 10;
 
-    // El panel y los botones viven en flujo vertical. Por construcción nunca se solapan.
+    // Separación exclusiva entre el panel superior y la lista de botones.
+    // Crece ligeramente en pantallas altas, pero permanece compacta.
+    const panelGap = clamp(Math.floor(viewportHeight * 0.032), 22, 34);
+
+    // El panel y los botones viven en flujo vertical. El cálculo descuenta
+    // también el espacio de seguridad para que nunca vuelvan a tocarse.
     const panelHeight = statusPanel.getBoundingClientRect().height;
-    const usableHeight = Math.max(220, stack.clientHeight - panelHeight - stackGap);
+    const usableHeight = Math.max(
+      190,
+      stack.clientHeight - panelHeight - panelGap,
+    );
 
     let gap = clamp(Math.floor(viewportHeight * 0.006), 3, 6);
     let itemHeight = Math.floor(
@@ -181,6 +188,7 @@ export class MenuController {
 
     shell.classList.add("menu-autofit-v2");
     shell.style.setProperty("--menu-stack-width", `${Math.round(menuWidth)}px`);
+    shell.style.setProperty("--menu-panel-gap", `${Math.round(panelGap)}px`);
     shell.style.setProperty("--menu-auto-height", `${Math.round(itemHeight)}px`);
     shell.style.setProperty("--menu-auto-gap", `${Math.round(gap)}px`);
     shell.style.setProperty("--menu-auto-font", `${fontSize.toFixed(1)}px`);
