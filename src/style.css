@@ -1478,3 +1478,100 @@ html[data-runtime-quality="low"] .learning-doc-card {
     padding: 8px 12px !important;
   }
 }
+
+
+/* ========================================================================== */
+/* PATCH V3 — MENÚ MÁS ABAJO Y SEPARACIÓN GARANTIZADA DEL PANEL               */
+/* ========================================================================== */
+
+/*
+ * Estructura nueva:
+ * panel y menú permanecen en una columna real.
+ * Esta variable controla únicamente la distancia entre ambos.
+ */
+.menu-shell.menu-main-layout.menu-layout-v3 .menu-left-stack {
+  gap: var(--menu-panel-gap, 26px) !important;
+}
+
+.menu-shell.menu-main-layout.menu-layout-v3 .status-panel {
+  margin: 0 !important;
+}
+
+.menu-shell.menu-main-layout.menu-layout-v3 .menu-view {
+  margin: 0 !important;
+  padding-top: 0 !important;
+}
+
+/*
+ * Compatibilidad con la estructura anterior del repositorio.
+ * Si GitHub todavía ejecuta un MenuController viejo sin .menu-left-stack,
+ * el menú se coloca explícitamente debajo del panel.
+ */
+.menu-shell:not(.menu-main-layout) > .menu-view {
+  top: clamp(350px, 46vh, 405px) !important;
+  left: clamp(18px, 4.2vw, 58px) !important;
+  width: min(445px, 38vw) !important;
+  max-height: calc(100vh - clamp(350px, 46vh, 405px) - 38px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+}
+
+.menu-shell:not(.menu-main-layout) > .menu-view .menu-options {
+  gap: 5px !important;
+}
+
+.menu-shell:not(.menu-main-layout) > .menu-view .menu-option {
+  width: 100% !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 0 14px 0 58px !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  letter-spacing: .105em !important;
+}
+
+.menu-shell:not(.menu-main-layout) > .menu-view .menu-option .marker,
+.menu-shell:not(.menu-main-layout) > .menu-view .menu-option .icon {
+  left: 16px !important;
+  width: 26px !important;
+  font-size: .74em !important;
+}
+
+@media (max-height: 760px) {
+  .menu-shell.menu-main-layout.menu-layout-v3 .menu-left-stack {
+    gap: var(--menu-panel-gap, 23px) !important;
+  }
+
+  .menu-shell:not(.menu-main-layout) > .menu-view {
+    top: 340px !important;
+    max-height: calc(100vh - 368px);
+  }
+}
+
+@media (max-height: 650px) {
+  .menu-shell.menu-main-layout.menu-layout-v3 .menu-left-stack {
+    gap: 16px !important;
+  }
+
+  .menu-shell:not(.menu-main-layout) > .menu-view {
+    top: 300px !important;
+    max-height: calc(100vh - 322px);
+  }
+
+  .menu-shell:not(.menu-main-layout) > .menu-view .menu-option {
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    font-size: 14px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .menu-shell:not(.menu-main-layout) > .menu-view {
+    left: 14px !important;
+    right: 14px !important;
+    width: auto !important;
+  }
+}
