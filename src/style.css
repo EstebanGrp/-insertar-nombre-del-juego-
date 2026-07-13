@@ -1280,3 +1280,51 @@ html[data-runtime-quality="low"] .learning-doc-card {
     font-size: 9px;
   }
 }
+
+
+/* ========================================================================== */
+/* MENÚ PRINCIPAL AUTOAJUSTABLE                                                */
+/* Las medidas son calculadas por MenuController según altura, ancho y botones. */
+/* ========================================================================== */
+.menu-shell.menu-autofit .menu-view {
+  top: var(--menu-auto-top) !important;
+  width: var(--menu-auto-width) !important;
+  max-width: calc(100vw - 28px);
+}
+
+.menu-shell.menu-autofit .menu-options {
+  width: var(--menu-auto-width) !important;
+  gap: var(--menu-auto-gap) !important;
+}
+
+.menu-shell.menu-autofit .menu-option {
+  width: var(--menu-auto-width) !important;
+  height: var(--menu-auto-height) !important;
+  min-height: var(--menu-auto-height) !important;
+  padding: 0 18px 0 var(--menu-auto-left-padding) !important;
+  font-size: var(--menu-auto-font) !important;
+  line-height: 1 !important;
+  letter-spacing: .11em !important;
+  white-space: nowrap;
+}
+
+.menu-shell.menu-autofit .menu-option .marker,
+.menu-shell.menu-autofit .menu-option .icon {
+  left: var(--menu-auto-icon-left) !important;
+  width: 30px;
+  font-size: .80em !important;
+}
+
+.menu-shell.menu-autofit .menu-option.selected {
+  transform: translateX(4px) !important;
+}
+
+@media (max-width: 760px) {
+  .menu-shell.menu-autofit .menu-view {
+    left: 14px !important;
+  }
+
+  .menu-shell.menu-autofit .menu-option {
+    letter-spacing: .075em !important;
+  }
+}
