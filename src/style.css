@@ -1328,3 +1328,153 @@ html[data-runtime-quality="low"] .learning-doc-card {
     letter-spacing: .075em !important;
   }
 }
+
+
+/* ========================================================================== */
+/* PATCH DEFINITIVO: MENÚ COMPACTO, AUTOAJUSTABLE Y SIN SOLAPAMIENTO          */
+/* El panel y los botones usan flujo vertical real, no posiciones que chocan. */
+/* ========================================================================== */
+.menu-shell.menu-main-layout .menu-left-stack {
+  position: absolute;
+  z-index: 8;
+  left: clamp(18px, 4.2vw, 58px);
+  top: clamp(16px, 3.2vh, 30px);
+  bottom: clamp(28px, 5.2vh, 48px);
+  width: var(--menu-stack-width, min(445px, 38vw));
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.2vh, 12px);
+  min-height: 0;
+  pointer-events: none;
+}
+
+.menu-shell.menu-main-layout .menu-left-stack > * {
+  pointer-events: auto;
+}
+
+.menu-shell.menu-main-layout .status-panel {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  flex: 0 0 auto;
+  padding: 13px 17px 14px !important;
+  font-size: clamp(10px, .82vw, 12px) !important;
+  line-height: 1.22 !important;
+  transform: none !important;
+}
+
+.menu-shell.menu-main-layout .status-head {
+  padding-bottom: 8px !important;
+  margin-bottom: 7px !important;
+  font-size: 1em !important;
+}
+
+.menu-shell.menu-main-layout .status-row {
+  padding: 3px 0 !important;
+}
+
+.menu-shell.menu-main-layout .menu-view {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  transform: none !important;
+}
+
+.menu-shell.menu-main-layout .menu-options {
+  width: 100% !important;
+  height: 100%;
+  display: grid !important;
+  grid-auto-rows: var(--menu-auto-height, 38px);
+  align-content: start;
+  gap: var(--menu-auto-gap, 5px) !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 7px 2px 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(79, 228, 241, .38) transparent;
+}
+
+.menu-shell.menu-main-layout .menu-option {
+  width: 100% !important;
+  height: var(--menu-auto-height, 38px) !important;
+  min-height: var(--menu-auto-height, 38px) !important;
+  max-height: var(--menu-auto-height, 38px) !important;
+  padding: 0 14px 0 var(--menu-auto-left-padding, 58px) !important;
+  font-size: var(--menu-auto-font, 16px) !important;
+  line-height: 1 !important;
+  letter-spacing: .105em !important;
+  white-space: nowrap;
+  border-radius: 0;
+  transform: none !important;
+}
+
+.menu-shell.menu-main-layout .menu-option .marker,
+.menu-shell.menu-main-layout .menu-option .icon {
+  left: var(--menu-auto-icon-left, 16px) !important;
+  width: 26px !important;
+  font-size: .74em !important;
+}
+
+.menu-shell.menu-main-layout .menu-option.selected {
+  transform: translateX(3px) !important;
+}
+
+.menu-shell.menu-main-layout .menu-option::before {
+  inset: 1px 0 !important;
+}
+
+/* Cancela el parche anterior que intentaba mover el menú con top calculado. */
+.menu-shell.menu-main-layout.menu-autofit .menu-view,
+.menu-shell.menu-main-layout.menu-autofit-v2 .menu-view {
+  top: auto !important;
+  left: auto !important;
+  width: 100% !important;
+}
+
+@media (max-height: 760px) {
+  .menu-shell.menu-main-layout .menu-left-stack {
+    top: 14px;
+    bottom: 28px;
+    gap: 7px;
+  }
+
+  .menu-shell.menu-main-layout .status-panel {
+    padding: 10px 14px 11px !important;
+    font-size: 10px !important;
+  }
+
+  .menu-shell.menu-main-layout .status-head {
+    padding-bottom: 6px !important;
+    margin-bottom: 5px !important;
+  }
+
+  .menu-shell.menu-main-layout .status-row {
+    padding: 2px 0 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .menu-shell.menu-main-layout .menu-left-stack {
+    left: 14px;
+    right: 14px;
+    width: auto !important;
+    max-width: none;
+  }
+
+  .menu-shell.menu-main-layout .menu-option {
+    letter-spacing: .065em !important;
+  }
+}
+
+@media (max-height: 600px) {
+  .menu-shell.menu-main-layout .status-row:nth-of-type(n + 5) {
+    display: none;
+  }
+
+  .menu-shell.menu-main-layout .status-panel {
+    padding: 8px 12px !important;
+  }
+}
