@@ -11,26 +11,90 @@ export class RobotCompanion {
 
     this.sprite = scene.physics.add
       .sprite(x, y, this.active ? "robot-active" : "robot-damaged")
-      .setDepth(18)
+      .setDepth(22)
       .setSize(42, 48)
-      .setOffset(11, 12);
+      .setOffset(11, 12)
+      .setData("entityType", "robot");
 
     this.sprite.body.setAllowGravity(false);
     this.sprite.setImmovable(true);
 
+    this.createVisibilityGuide(x, y);
+
     if (this.active) {
       this.sprite.anims.play("robot-active", true);
+      this.sprite.setScale(1.08);
       this.startHover();
+      this.hideDiscoveryGuide();
     } else {
+      this.sprite.setScale(1.22).setTint(0xbfefff);
       scene.tweens.add({
         targets: this.sprite,
-        alpha: { from: 0.45, to: 0.9 },
-        duration: 850,
+        alpha: { from: 0.72, to: 1 },
+        duration: 720,
         yoyo: true,
         repeat: -1,
-        ease: "Sine.InOut",
+        ease: Phaser.Math.Easing.Sine.InOut,
+      });
+
+      if (this.discovered) this.hideDiscoveryGuide();
+    }
+  }
+
+  createVisibilityGuide(x, y) {
+    this.discoveryRing = this.scene.add
+      .ellipse(x, y + 18, 92, 30, 0x7beeff, 0.08)
+      .setStrokeStyle(2, 0x8df7ff, 0.62)
+      .setDepth(19)
+      .setBlendMode(Phaser.BlendModes.ADD);
+
+    this.discoveryMarker = this.scene.add
+      .text(x, y - 86, "▼", {
+        fontFamily: "Consolas, monospace",
+        fontSize: "25px",
+        color: "#d9ffff",
+        stroke: "#096b78",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(40)
+      .setBlendMode(Phaser.BlendModes.ADD);
+
+    if (!this.active && !this.discovered && this.scene.settings?.motion !== false) {
+      this.scene.tweens.add({
+        targets: this.discoveryMarker,
+        y: y - 98,
+        alpha: { from: 0.55, to: 1 },
+        duration: 620,
+        yoyo: true,
+        repeat: -1,
+        ease: Phaser.Math.Easing.Sine.InOut,
+      });
+
+      this.scene.tweens.add({
+        targets: this.discoveryRing,
+        scaleX: { from: 0.85, to: 1.18 },
+        scaleY: { from: 0.85, to: 1.18 },
+        alpha: { from: 0.05, to: 0.22 },
+        duration: 900,
+        yoyo: true,
+        repeat: -1,
+        ease: Phaser.Math.Easing.Sine.InOut,
       });
     }
+  }
+
+  hideDiscoveryGuide() {
+    this.scene.tweens.killTweensOf(this.discoveryMarker);
+    this.scene.tweens.killTweensOf(this.discoveryRing);
+    this.discoveryMarker?.setVisible(false);
+    this.discoveryRing?.setVisible(false);
+  }
+
+  markDiscovered() {
+    this.discovered = true;
+    this.hideDiscoveryGuide();
+    this.sprite.clearTint().setTint(0xd8fbff).setAlpha(1);
   }
 
   startHover() {
@@ -42,10 +106,11 @@ export class RobotCompanion {
     this.active = true;
     this.discovered = true;
     this.memory = Math.max(this.memory, 7);
+    this.hideDiscoveryGuide();
     this.scene.tweens.killTweensOf(this.sprite);
     this.sprite.setTexture("robot-active", 0);
     this.sprite.anims.play("robot-active", true);
-    this.sprite.setAlpha(1);
+    this.sprite.setAlpha(1).setScale(1.08).clearTint();
     this.scene.spawnGhostBurst(this.sprite.x, this.sprite.y, 24);
     this.startHover();
     this.gesture("portal", 1900);
@@ -97,7 +162,7 @@ export class RobotCompanion {
       scale: 0.85,
       y: hologram.y - 8,
       duration: 240,
-      ease: "Back.Out",
+      ease: Phaser.Math.Easing.Back.Out,
       yoyo: true,
       hold: Math.max(200, duration - 480),
       onComplete: () => {
@@ -123,5 +188,14 @@ export class RobotCompanion {
       coreInstalled: this.active,
       memory: this.memory,
     };
+  }
+
+  destroy() {
+    this.scene.tweens.killTweensOf(this.sprite);
+    this.scene.tweens.killTweensOf(this.discoveryMarker);
+    this.scene.tweens.killTweensOf(this.discoveryRing);
+    this.discoveryMarker?.destroy();
+    this.discoveryRing?.destroy();
+    this.sprite?.destroy();
   }
 }
