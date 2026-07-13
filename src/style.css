@@ -1575,3 +1575,187 @@ html[data-runtime-quality="low"] .learning-doc-card {
     width: auto !important;
   }
 }
+
+
+/* ========================================================================== */
+/* V4 FINAL — BOTONES COMPACTOS Y ANIMACIONES LIMPIAS                         */
+/* ========================================================================== */
+
+.menu-shell.menu-main-layout.menu-compact-final .menu-left-stack {
+  width: min(405px, 31vw) !important;
+  gap: 20px !important;
+}
+
+.menu-shell.menu-main-layout.menu-compact-final .status-panel {
+  padding: 12px 15px !important;
+  font-size: 11px !important;
+  line-height: 1.18 !important;
+}
+
+.menu-shell.menu-main-layout.menu-compact-final .status-head {
+  margin-bottom: 6px !important;
+  padding-bottom: 7px !important;
+}
+
+.menu-shell.menu-main-layout.menu-compact-final .status-row {
+  padding: 2px 0 !important;
+}
+
+.menu-shell.menu-main-layout.menu-compact-final .menu-view,
+.menu-shell.menu-main-layout.menu-compact-final .menu-options {
+  width: 100% !important;
+  height: auto !important;
+}
+
+.menu-shell.menu-main-layout.menu-compact-final .menu-options {
+  display: grid !important;
+  grid-auto-rows: 34px !important;
+  gap: 4px !important;
+  align-content: start !important;
+  overflow: visible !important;
+  padding: 0 5px 0 0 !important;
+}
+
+.menu-shell.menu-main-layout.menu-compact-final .menu-option {
+  width: 100% !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 12px 0 52px !important;
+  font-size: 15.5px !important;
+  line-height: 1 !important;
+  letter-spacing: .09em !important;
+  transform: translateX(0) !important;
+  opacity: .72;
+  filter: none;
+  transition:
+    opacity 150ms ease,
+    color 150ms ease,
+    transform 180ms cubic-bezier(.2,.8,.2,1),
+    letter-spacing 180ms ease,
+    filter 180ms ease !important;
+}
+
+.menu-shell.menu-main-layout.menu-compact-final .menu-option::before {
+  inset: 1px 0 !important;
+  transform: scaleX(.94) !important;
+  transition:
+    opacity 150ms ease,
+    transform 220ms cubic-bezier(.2,.8,.2,1) !important;
+}
+
+.menu-shell.menu-main-layout.menu-compact-final .menu-option::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: -30%;
+  width: 22%;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(205,255,255,.36), transparent);
+  filter: blur(2px);
+}
+
+.menu-shell.menu-main-layout.menu-compact-final .menu-option .marker,
+.menu-shell.menu-main-layout.menu-compact-final .menu-option .icon {
+  left: 15px !important;
+  width: 24px !important;
+  font-size: .72em !important;
+}
+
+.menu-shell.menu-main-layout.menu-compact-final .menu-option.selected {
+  opacity: 1;
+  color: #f2ffff;
+  transform: translateX(4px) !important;
+  letter-spacing: .105em !important;
+  filter: drop-shadow(0 0 5px rgba(65,239,255,.42));
+  animation: compactSelectionIn 180ms ease-out both;
+}
+
+.menu-shell.menu-main-layout.menu-compact-final .menu-option.selected::before {
+  opacity: 1;
+  transform: scaleX(1) !important;
+}
+
+.menu-shell.menu-main-layout.menu-compact-final .menu-option.selected::after {
+  opacity: 1;
+  animation: compactSweep 1.7s linear infinite;
+}
+
+.menu-shell.menu-main-layout.menu-compact-final .menu-option.selected .marker {
+  animation: compactMarker 720ms ease-in-out infinite alternate;
+}
+
+@keyframes compactSelectionIn {
+  from { opacity: .58; transform: translateX(-4px); }
+  to { opacity: 1; transform: translateX(4px); }
+}
+
+@keyframes compactSweep {
+  from { transform: translateX(-20%); }
+  to { transform: translateX(560%); }
+}
+
+@keyframes compactMarker {
+  from { transform: translateX(0); opacity: .72; }
+  to { transform: translateX(4px); opacity: 1; }
+}
+
+@media (max-height: 800px) {
+  .menu-shell.menu-main-layout.menu-compact-final .menu-left-stack {
+    gap: 16px !important;
+  }
+
+  .menu-shell.menu-main-layout.menu-compact-final .status-panel {
+    padding: 10px 14px !important;
+    font-size: 10px !important;
+  }
+
+  .menu-shell.menu-main-layout.menu-compact-final .menu-options {
+    grid-auto-rows: 31px !important;
+    gap: 3px !important;
+  }
+
+  .menu-shell.menu-main-layout.menu-compact-final .menu-option {
+    height: 31px !important;
+    min-height: 31px !important;
+    max-height: 31px !important;
+    font-size: 14px !important;
+  }
+}
+
+@media (max-height: 650px) {
+  .menu-shell.menu-main-layout.menu-compact-final .menu-left-stack {
+    gap: 12px !important;
+  }
+
+  .menu-shell.menu-main-layout.menu-compact-final .menu-options {
+    grid-auto-rows: 28px !important;
+    gap: 2px !important;
+  }
+
+  .menu-shell.menu-main-layout.menu-compact-final .menu-option {
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+    font-size: 12.5px !important;
+    padding-left: 46px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .menu-shell.menu-main-layout.menu-compact-final .menu-left-stack {
+    width: calc(100vw - 28px) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-shell.menu-main-layout.menu-compact-final .menu-option,
+  .menu-shell.menu-main-layout.menu-compact-final .menu-option::before,
+  .menu-shell.menu-main-layout.menu-compact-final .menu-option::after,
+  .menu-shell.menu-main-layout.menu-compact-final .menu-option .marker {
+    animation: none !important;
+    transition-duration: 1ms !important;
+  }
+}
