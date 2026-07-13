@@ -145,55 +145,71 @@ export class MenuController {
     const menuOptions = stack?.querySelector(".menu-options");
     const buttons = [...(stack?.querySelectorAll(".menu-option") || [])];
 
-    if (!shell || !stack || !statusPanel || !menuView || !menuOptions || buttons.length === 0) return;
+    if (!shell || !stack || !statusPanel || !menuView || !menuOptions || buttons.length === 0) {
+      return;
+    }
 
-    const viewportWidth = shell.clientWidth || window.innerWidth;
-    const viewportHeight = shell.clientHeight || window.innerHeight;
-    const itemCount = buttons.length;
-    const stackStyle = getComputedStyle(stack);
+    const width = shell.clientWidth || window.innerWidth;
+    const height = shell.clientHeight || window.innerHeight;
+    const count = buttons.length;
 
-    // Separación exclusiva entre el panel superior y la lista de botones.
-    // Crece ligeramente en pantallas altas, pero permanece compacta.
-    const panelGap = clamp(Math.floor(viewportHeight * 0.032), 22, 34);
+    const buttonHeight = height <= 650 ? 28 : height <= 800 ? 31 : 34;
+    const fontSize = height <= 650 ? 12.5 : height <= 800 ? 14 : 15.5;
+    const buttonGap = height <= 650 ? 2 : 4;
+    const panelGap = height <= 650 ? 12 : height <= 800 ? 16 : 20;
+    const menuWidth = width <= 760
+      ? Math.max(270, width - 30)
+      : clamp(width * 0.29, 330, 405);
 
-    // El panel y los botones viven en flujo vertical. El cálculo descuenta
-    // también el espacio de seguridad para que nunca vuelvan a tocarse.
+    shell.classList.add("menu-compact-final");
+
+    stack.style.setProperty("width", `${Math.round(menuWidth)}px`, "important");
+    stack.style.setProperty("gap", `${panelGap}px`, "important");
+
+    statusPanel.style.setProperty("width", "100%", "important");
+    statusPanel.style.setProperty("padding", height <= 700 ? "10px 14px" : "12px 15px", "important");
+    statusPanel.style.setProperty("font-size", height <= 700 ? "10px" : "11px", "important");
+    statusPanel.style.setProperty("line-height", "1.18", "important");
+
+    menuView.style.setProperty("position", "relative", "important");
+    menuView.style.setProperty("inset", "auto", "important");
+    menuView.style.setProperty("width", "100%", "important");
+    menuView.style.setProperty("overflow", "visible", "important");
+
+    menuOptions.style.setProperty("display", "grid", "important");
+    menuOptions.style.setProperty("grid-auto-rows", `${buttonHeight}px`, "important");
+    menuOptions.style.setProperty("gap", `${buttonGap}px`, "important");
+    menuOptions.style.setProperty("width", "100%", "important");
+    menuOptions.style.setProperty("height", "auto", "important");
+    menuOptions.style.setProperty("overflow", "visible", "important");
+
+    const longestLabel = Math.max(...buttons.map((button) => button.textContent.trim().length));
+    const adjustedFont = longestLabel > 21 ? fontSize * 0.86 : longestLabel > 17 ? fontSize * 0.93 : fontSize;
+
+    buttons.forEach((button) => {
+      button.style.setProperty("width", "100%", "important");
+      button.style.setProperty("height", `${buttonHeight}px`, "important");
+      button.style.setProperty("min-height", `${buttonHeight}px`, "important");
+      button.style.setProperty("max-height", `${buttonHeight}px`, "important");
+      button.style.setProperty("padding", "0 12px 0 52px", "important");
+      button.style.setProperty("font-size", `${adjustedFont.toFixed(1)}px`, "important");
+      button.style.setProperty("line-height", "1", "important");
+      button.style.setProperty("letter-spacing", ".09em", "important");
+    });
+
+    buttons.forEach((button) => {
+      button.querySelectorAll(".marker, .icon").forEach((element) => {
+        element.style.setProperty("left", "15px", "important");
+        element.style.setProperty("width", "24px", "important");
+        element.style.setProperty("font-size", ".72em", "important");
+      });
+    });
+
     const panelHeight = statusPanel.getBoundingClientRect().height;
-    const usableHeight = Math.max(
-      190,
-      stack.clientHeight - panelHeight - panelGap,
-    );
-
-    let gap = clamp(Math.floor(viewportHeight * 0.006), 3, 6);
-    let itemHeight = Math.floor(
-      (usableHeight - gap * Math.max(0, itemCount - 1)) / itemCount,
-    );
-
-    // Menú realmente compacto: 32–42 px, incluso en pantallas grandes.
-    itemHeight = clamp(itemHeight, 32, 42);
-
-    const longestLabel = Math.max(
-      0,
-      ...buttons.map((button) => button.textContent.trim().length),
-    );
-    const labelFactor = longestLabel > 22 ? 0.78 : longestLabel > 18 ? 0.87 : 1;
-    const fontSize = clamp(itemHeight * 0.43 * labelFactor, 13, 18);
-
-    const menuWidth = viewportWidth <= 760
-      ? Math.max(270, viewportWidth - 28)
-      : clamp(viewportWidth * 0.32, 340, 445);
-
-    const leftPadding = clamp(itemHeight * 1.45, 52, 64);
-    const iconLeft = clamp(itemHeight * 0.42, 14, 18);
-
-    shell.classList.add("menu-autofit-v2");
-    shell.style.setProperty("--menu-stack-width", `${Math.round(menuWidth)}px`);
-    shell.style.setProperty("--menu-panel-gap", `${Math.round(panelGap)}px`);
-    shell.style.setProperty("--menu-auto-height", `${Math.round(itemHeight)}px`);
-    shell.style.setProperty("--menu-auto-gap", `${Math.round(gap)}px`);
-    shell.style.setProperty("--menu-auto-font", `${fontSize.toFixed(1)}px`);
-    shell.style.setProperty("--menu-auto-left-padding", `${Math.round(leftPadding)}px`);
-    shell.style.setProperty("--menu-auto-icon-left", `${Math.round(iconLeft)}px`);
+    const totalMenuHeight = count * buttonHeight + Math.max(0, count - 1) * buttonGap;
+    const available = height - stack.getBoundingClientRect().top - panelHeight - panelGap - 34;
+    menuView.style.setProperty("max-height", `${Math.max(buttonHeight, available)}px`, "important");
+    menuView.style.setProperty("overflow-y", totalMenuHeight > available ? "auto" : "visible", "important");
   }
 
   option(item, index) {
