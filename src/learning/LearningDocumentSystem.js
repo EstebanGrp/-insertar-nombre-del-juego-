@@ -21,34 +21,75 @@ export class LearningDocumentSystem {
 
   createEntries() {
     this.entries = this.definitions.map((definition, index) => {
+      const alreadyRead = this.read.has(definition.id);
       const sprite = this.scene.physics.add
         .sprite(definition.x, definition.y, "learning-terminal")
-        .setDepth(17)
-        .setScale(0.58)
-        .setTint(this.read.has(definition.id) ? 0x6f8d91 : 0x9df8ff)
-        .setBlendMode(Phaser.BlendModes.ADD);
+        .setDepth(24)
+        .setScale(0.82)
+        .setTint(alreadyRead ? 0x6f8d91 : 0xc8ffff)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setData("documentId", definition.id);
 
       sprite.body.setAllowGravity(false);
       sprite.body.setImmovable(true);
-      sprite.setData("documentId", definition.id);
 
-      if (this.scene.performance?.profile?.backgroundTweens !== false) {
+      const ring = this.scene.add
+        .ellipse(definition.x, definition.y + 20, 86, 27, 0x84efff, 0.06)
+        .setStrokeStyle(2, alreadyRead ? 0x56787d : 0x9af8ff, alreadyRead ? 0.22 : 0.72)
+        .setDepth(20)
+        .setBlendMode(Phaser.BlendModes.ADD);
+
+      const marker = this.scene.add
+        .text(definition.x, definition.y - 72, "▼", {
+          fontFamily: "Consolas, monospace",
+          fontSize: "22px",
+          color: alreadyRead ? "#668086" : "#e6ffff",
+          stroke: "#0b6875",
+          strokeThickness: 4,
+        })
+        .setOrigin(0.5)
+        .setDepth(40)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setVisible(!alreadyRead);
+
+      if (!alreadyRead && this.scene.performance?.profile?.backgroundTweens !== false) {
         this.scene.tweens.add({
           targets: sprite,
           y: definition.y - 9,
-          alpha: { from: 0.62, to: 1 },
-          duration: 850 + index * 90,
+          alpha: { from: 0.72, to: 1 },
+          duration: 760 + index * 90,
+          yoyo: true,
+          repeat: -1,
+          ease: Phaser.Math.Easing.Sine.InOut,
+        });
+
+        this.scene.tweens.add({
+          targets: marker,
+          y: definition.y - 84,
+          alpha: { from: 0.55, to: 1 },
+          duration: 580,
+          yoyo: true,
+          repeat: -1,
+          ease: Phaser.Math.Easing.Sine.InOut,
+        });
+
+        this.scene.tweens.add({
+          targets: ring,
+          scaleX: { from: 0.85, to: 1.17 },
+          scaleY: { from: 0.85, to: 1.17 },
+          alpha: { from: 0.05, to: 0.2 },
+          duration: 850,
           yoyo: true,
           repeat: -1,
           ease: Phaser.Math.Easing.Sine.InOut,
         });
       }
 
-      return { definition, sprite };
+      return { definition, sprite, ring, marker };
     });
   }
 
-  nearest(playerSprite, maxDistance = 105) {
+  nearest(playerSprite, maxDistance = 140) {
     let nearest = null;
     let distance = maxDistance;
 
@@ -81,6 +122,16 @@ export class LearningDocumentSystem {
     return this.overallTotal;
   }
 
+  markEntryRead(entry) {
+    const { sprite, ring, marker } = entry;
+    this.scene.tweens.killTweensOf(sprite);
+    this.scene.tweens.killTweensOf(ring);
+    this.scene.tweens.killTweensOf(marker);
+    sprite.setTint(0x6f8d91).setAlpha(0.72).setScale(0.72);
+    ring.setStrokeStyle(1, 0x56787d, 0.22).setAlpha(0.1).setScale(1);
+    marker.setVisible(false);
+  }
+
   open(entry) {
     if (!entry || this.isOpen) return;
 
@@ -90,13 +141,13 @@ export class LearningDocumentSystem {
     this.scene.physics.world.isPaused = true;
     this.scene.hud?.setPrompt("");
 
-    const { definition, sprite } = entry;
+    const { definition } = entry;
     const firstRead = !this.read.has(definition.id);
 
     if (firstRead) {
       this.read.add(definition.id);
       this.saveData.progress.docsRead = [...this.read];
-      sprite.setTint(0x6f8d91);
+      this.markEntryRead(entry);
       this.onRead?.(definition.id);
     }
 
@@ -156,6 +207,16 @@ export class LearningDocumentSystem {
     document.removeEventListener("keydown", this.boundKeyHandler);
     this.overlay?.remove();
     this.overlay = null;
+
+    for (const entry of this.entries) {
+      this.scene.tweens.killTweensOf(entry.sprite);
+      this.scene.tweens.killTweensOf(entry.ring);
+      this.scene.tweens.killTweensOf(entry.marker);
+      entry.marker?.destroy();
+      entry.ring?.destroy();
+      entry.sprite?.destroy();
+    }
+
     this.entries.length = 0;
   }
 
