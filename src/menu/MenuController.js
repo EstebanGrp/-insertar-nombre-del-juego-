@@ -82,22 +82,25 @@ export class MenuController {
     const slots = this.saveManager.getSlots();
     const memory = Math.max(2, ...slots.map((slot) => slot?.robot?.memory ?? 2));
     const motionClass = this.settings.motion ? "" : "reduced-motion";
+    const layoutClass = this.view === "main" ? "menu-main-layout" : "menu-sub-layout";
     this.root.innerHTML = `
-      <section class="menu-shell ${motionClass}">
+      <section class="menu-shell ${motionClass} ${layoutClass}">
         <div class="menu-bg"></div><div class="menu-shadow"></div>
         <div class="core-glow"></div><div class="core-ring r1"></div><div class="core-ring r2"></div>
         ${this.settings.scanlines ? '<div class="scanlines"></div>' : ""}
         <div class="menu-build">${i18n.t("app.build")}</div>
-        <aside class="status-panel">
-          <div class="status-head">&gt; ${i18n.t("status.header")}</div>
-          <div class="status-row"><span>${i18n.t("status.signal")}</span><b class="online">${i18n.t("status.online")}</b></div>
-          <div class="status-row"><span>${i18n.t("status.memory")}</span><b>${String(memory).padStart(2, "0")}%</b></div>
-          <div class="status-row"><span>${i18n.t("status.voice")}</span><b>${i18n.t("status.offline")}</b></div>
-          <div class="status-row"><span>${i18n.t("status.host")}</span><b>${i18n.t("status.humanEcho")}</b></div>
-          <div class="status-row"><span>${i18n.t("status.reality")}</span><b>${i18n.t("status.locked")}</b></div>
-          <div class="status-row"><span>${i18n.t("status.origin")}</span><b>${i18n.t("status.unknown")}</b></div>
-        </aside>
-        <main class="menu-view">${content}</main>
+        <div class="menu-left-stack">
+          <aside class="status-panel">
+            <div class="status-head">&gt; ${i18n.t("status.header")}</div>
+            <div class="status-row"><span>${i18n.t("status.signal")}</span><b class="online">${i18n.t("status.online")}</b></div>
+            <div class="status-row"><span>${i18n.t("status.memory")}</span><b>${String(memory).padStart(2, "0")}%</b></div>
+            <div class="status-row"><span>${i18n.t("status.voice")}</span><b>${i18n.t("status.offline")}</b></div>
+            <div class="status-row"><span>${i18n.t("status.host")}</span><b>${i18n.t("status.humanEcho")}</b></div>
+            <div class="status-row"><span>${i18n.t("status.reality")}</span><b>${i18n.t("status.locked")}</b></div>
+            <div class="status-row"><span>${i18n.t("status.origin")}</span><b>${i18n.t("status.unknown")}</b></div>
+          </aside>
+          <main class="menu-view">${content}</main>
+        </div>
         <aside id="world-preview" class="world-preview"></aside>
         <div class="menu-hint">${i18n.t("nav.hint")}</div>
       </section>`;
@@ -136,59 +139,48 @@ export class MenuController {
     if (this.view !== "main" || this.root.classList.contains("hidden")) return;
 
     const shell = this.root.querySelector(".menu-shell");
-    const statusPanel = shell?.querySelector(".status-panel");
-    const menuView = shell?.querySelector(".menu-view");
-    const buttons = [...(shell?.querySelectorAll(".menu-option") || [])];
+    const stack = shell?.querySelector(".menu-left-stack");
+    const statusPanel = stack?.querySelector(".status-panel");
+    const menuView = stack?.querySelector(".menu-view");
+    const menuOptions = stack?.querySelector(".menu-options");
+    const buttons = [...(stack?.querySelectorAll(".menu-option") || [])];
 
-    if (!shell || !statusPanel || !menuView || buttons.length === 0) return;
+    if (!shell || !stack || !statusPanel || !menuView || !menuOptions || buttons.length === 0) return;
 
-    const shellRect = shell.getBoundingClientRect();
-    const panelRect = statusPanel.getBoundingClientRect();
-    const viewportWidth = shellRect.width || window.innerWidth;
-    const viewportHeight = shellRect.height || window.innerHeight;
+    const viewportWidth = shell.clientWidth || window.innerWidth;
+    const viewportHeight = shell.clientHeight || window.innerHeight;
     const itemCount = buttons.length;
+    const stackStyle = getComputedStyle(stack);
+    const stackGap = parseFloat(stackStyle.rowGap || stackStyle.gap) || 10;
 
-    // El menú siempre comienza debajo del panel de estado, nunca encima de él.
-    const panelBottom = panelRect.bottom - shellRect.top;
-    const minimumTop = panelBottom + clamp(viewportHeight * 0.012, 7, 13);
-    const preferredTop = viewportHeight * (viewportWidth <= 760 ? 0.38 : 0.30);
-    let menuTop = Math.max(minimumTop, preferredTop);
+    // El panel y los botones viven en flujo vertical. Por construcción nunca se solapan.
+    const panelHeight = statusPanel.getBoundingClientRect().height;
+    const usableHeight = Math.max(220, stack.clientHeight - panelHeight - stackGap);
 
-    // Reserva espacio para la ayuda inferior y el borde de la pantalla.
-    const bottomReserve = clamp(viewportHeight * 0.065, 38, 62);
-    let availableHeight = viewportHeight - menuTop - bottomReserve;
-
-    const gap = clamp(Math.floor(viewportHeight * 0.008), 4, 8);
+    let gap = clamp(Math.floor(viewportHeight * 0.006), 3, 6);
     let itemHeight = Math.floor(
-      (availableHeight - gap * Math.max(0, itemCount - 1)) / itemCount,
+      (usableHeight - gap * Math.max(0, itemCount - 1)) / itemCount,
     );
 
-    itemHeight = clamp(itemHeight, 38, 54);
-
-    // Si la pantalla es muy baja, recoloca el menú para que todos los botones quepan.
-    const totalHeight = itemHeight * itemCount + gap * Math.max(0, itemCount - 1);
-    if (menuTop + totalHeight > viewportHeight - bottomReserve) {
-      menuTop = Math.max(minimumTop, viewportHeight - bottomReserve - totalHeight);
-      availableHeight = viewportHeight - menuTop - bottomReserve;
-    }
+    // Menú realmente compacto: 32–42 px, incluso en pantallas grandes.
+    itemHeight = clamp(itemHeight, 32, 42);
 
     const longestLabel = Math.max(
       0,
       ...buttons.map((button) => button.textContent.trim().length),
     );
-    const labelFactor = longestLabel > 22 ? 0.80 : longestLabel > 18 ? 0.90 : 1;
-    const fontSize = clamp(itemHeight * 0.43 * labelFactor, 14, 22);
+    const labelFactor = longestLabel > 22 ? 0.78 : longestLabel > 18 ? 0.87 : 1;
+    const fontSize = clamp(itemHeight * 0.43 * labelFactor, 13, 18);
 
     const menuWidth = viewportWidth <= 760
-      ? Math.max(280, viewportWidth - 28)
-      : clamp(viewportWidth * 0.38, 350, 520);
+      ? Math.max(270, viewportWidth - 28)
+      : clamp(viewportWidth * 0.32, 340, 445);
 
-    const leftPadding = clamp(itemHeight * 1.65, 62, 84);
-    const iconLeft = clamp(itemHeight * 0.46, 18, 25);
+    const leftPadding = clamp(itemHeight * 1.45, 52, 64);
+    const iconLeft = clamp(itemHeight * 0.42, 14, 18);
 
-    shell.classList.add("menu-autofit");
-    shell.style.setProperty("--menu-auto-top", `${Math.round(menuTop)}px`);
-    shell.style.setProperty("--menu-auto-width", `${Math.round(menuWidth)}px`);
+    shell.classList.add("menu-autofit-v2");
+    shell.style.setProperty("--menu-stack-width", `${Math.round(menuWidth)}px`);
     shell.style.setProperty("--menu-auto-height", `${Math.round(itemHeight)}px`);
     shell.style.setProperty("--menu-auto-gap", `${Math.round(gap)}px`);
     shell.style.setProperty("--menu-auto-font", `${fontSize.toFixed(1)}px`);
