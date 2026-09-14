@@ -8,7 +8,6 @@ import { Hud } from "../ui/Hud.js";
 import { AchievementManager } from "../systems/AchievementManager.js";
 import { PerformanceManager } from "../systems/PerformanceManager.js";
 import { ProceduralBackdrop } from "../systems/ProceduralBackdrop.js";
-import { ThreeDepthBackdrop } from "../systems/ThreeDepthBackdrop.js";
 import { ForgeSystem } from "../systems/ForgeSystem.js";
 import { SecretRoomSystem } from "../systems/SecretRoomSystem.js";
 import { LearningDocumentSystem } from "../../learning/LearningDocumentSystem.js";
@@ -133,6 +132,7 @@ export class GameScene extends Phaser.Scene {
     this.cutsceneActive = false;
     this.roomEntered = false;
     this.levelTransitioning = false;
+    this.depthBackdropLoadCancelled = false;
     this.boss = null;
     this.bossStarted = false;
     this.levelBossDefeated = this.saveData.progress.levelBosses.includes(this.levelNumber);
@@ -344,12 +344,9 @@ export class GameScene extends Phaser.Scene {
 
   createWorldVisuals() {
     this.physics.world.setBounds(0, 0, this.layout.width, this.layout.height);
-    this.depthBackdrop = new ThreeDepthBackdrop(
-      this,
-      this.definition,
-      this.performance.profile.quality,
-    );
+    this.depthBackdrop = null;
     this.backdrop = new ProceduralBackdrop(this, this.definition, this.layout.width);
+    this.loadDepthBackdrop();
 
     this.ambientParticles = this.add.particles(0, 0, "spirit-particle", {
       x: { min: 0, max: this.layout.width },
@@ -362,6 +359,36 @@ export class GameScene extends Phaser.Scene {
       frequency: this.performance.profile.ambientFrequency,
       blendMode: Phaser.BlendModes.ADD,
     }).setDepth(-12);
+  }
+
+  async loadDepthBackdrop() {
+    if (this.performance.profile.quality === "low") return;
+
+    try {
+      const { ThreeDepthBackdrop } = await import("../systems/ThreeDepthBackdrop.js");
+      if (this.depthBackdropLoadCancelled || !this.scene.isActive()) return;
+
+      const backdrop = new ThreeDepthBackdrop(
+        this,
+        this.definition,
+        this.performance.profile.quality,
+      );
+      if (this.depthBackdropLoadCancelled || !this.scene.isActive()) {
+        backdrop.destroy();
+        return;
+      }
+
+      this.depthBackdrop = backdrop;
+      this.backdrop?.rebuild();
+    } catch (error) {
+      console.warn("Three.js depth layer could not be loaded; using the Phaser fallback.", error);
+    }
+  }
+
+  applyPerformanceProfile() {
+    const profile = this.performance.profile;
+    this.ambientParticles?.setFrequency(profile.ambientFrequency);
+    this.depthBackdrop?.setQuality(profile.quality);
   }
 
   createLevelGeometry() {
@@ -671,7 +698,8 @@ export class GameScene extends Phaser.Scene {
 
   update(time, delta) {
     if (!this.player) return;
-    this.performance.update(delta);
+    const qualityChanged = this.performance.update(delta, !this.isPaused && !document.hidden);
+    if (qualityChanged) this.applyPerformanceProfile();
     this.depthBackdrop?.update(
       time,
       this.cameras.main.scrollX,
@@ -1274,6 +1302,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   cleanup() {
+    this.depthBackdropLoadCancelled = true;
     this.hidePause();
     this.learningDocs?.destroy();
     this.secretRoom?.destroy();

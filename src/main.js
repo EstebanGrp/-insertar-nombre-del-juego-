@@ -1,9 +1,7 @@
-import Phaser from "phaser";
 import "./style.css";
 import { i18n } from "./i18n/I18n.js";
 import { SaveManager } from "./shared/SaveManager.js";
 import { MenuController } from "./menu/MenuController.js";
-import { GameScene } from "./game/scenes/GameScene.js";
 
 function escapeHtml(value) {
   return String(value)
@@ -40,66 +38,86 @@ const settings = saveManager.getSettings();
 const gameRoot = document.getElementById("game-root");
 const menuRoot = document.getElementById("menu-root");
 
-const game = new Phaser.Game({
-  type: Phaser.AUTO,
-  parent: "game-root",
-  width: window.innerWidth,
-  height: window.innerHeight,
-  resolution: 1,
-  transparent: true,
-  pixelArt: false,
-  antialias: false,
-  roundPixels: true,
-  disableContextMenu: true,
-  render: {
-    antialias: false,
-    antialiasGL: false,
-    powerPreference: "high-performance",
-    failIfMajorPerformanceCaveat: false,
-    batchSize: 2048,
-  },
-  fps: {
-    target: 60,
-    min: 30,
-    smoothStep: true,
-  },
-  physics: {
-    default: "arcade",
-    arcade: {
-      gravity: { y: 1450 },
-      debug: false,
-      fps: 60,
-    },
-  },
-  scale: {
-    mode: Phaser.Scale.RESIZE,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-  },
-  scene: [],
-});
-
-window.__game = game;
-game.scene.add("GameScene", GameScene, false);
-
 let menu;
+let game = null;
+let gamePromise = null;
+
+async function ensureGame() {
+  if (game) return game;
+  if (gamePromise) return gamePromise;
+
+  gamePromise = Promise.all([
+    import("phaser"),
+    import("./game/scenes/GameScene.js"),
+  ]).then(([phaserModule, sceneModule]) => {
+    const Phaser = phaserModule.default;
+    const instance = new Phaser.Game({
+      type: Phaser.AUTO,
+      parent: "game-root",
+      width: window.innerWidth,
+      height: window.innerHeight,
+      resolution: 1,
+      transparent: true,
+      pixelArt: false,
+      antialias: false,
+      roundPixels: true,
+      disableContextMenu: true,
+      render: {
+        antialias: false,
+        antialiasGL: false,
+        powerPreference: "high-performance",
+        failIfMajorPerformanceCaveat: false,
+        batchSize: 2048,
+      },
+      fps: {
+        target: 60,
+        min: 30,
+        smoothStep: true,
+      },
+      physics: {
+        default: "arcade",
+        arcade: {
+          gravity: { y: 1450 },
+          debug: false,
+          fps: 60,
+        },
+      },
+      scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+      },
+      scene: [],
+    });
+
+    instance.registry.set("saveManager", saveManager);
+    instance.registry.set("returnToMenu", returnToMenu);
+    instance.registry.set("i18n", i18n);
+    instance.registry.set("startupSettings", settings);
+    instance.scene.add("GameScene", sceneModule.GameScene, false);
+    game = instance;
+    window.__game = instance;
+    return instance;
+  }).catch((error) => {
+    gamePromise = null;
+    throw error;
+  });
+
+  return gamePromise;
+}
 
 function returnToMenu() {
-  game.scene.stop("GameScene");
+  game?.scene.stop("GameScene");
   gameRoot.classList.remove("active");
   menu.show();
 }
 
-game.registry.set("saveManager", saveManager);
-game.registry.set("returnToMenu", returnToMenu);
-game.registry.set("i18n", i18n);
-game.registry.set("startupSettings", settings);
-
 menu = new MenuController({
   root: menuRoot,
   saveManager,
-  startWorld(slot, save) {
+  async startWorld(slot, save) {
+    const activeGame = await ensureGame();
     gameRoot.classList.add("active");
-    game.scene.start("GameScene", { slot, save });
+    activeGame.scene.start("GameScene", { slot, save });
   },
 });
 

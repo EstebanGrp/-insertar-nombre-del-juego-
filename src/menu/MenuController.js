@@ -41,6 +41,7 @@ export class MenuController {
     this.settings = saveManager.getSettings();
     this.audioContext = null;
     this.resizeFrame = 0;
+    this.loadingWorld = false;
     this.onKey = this.onKey.bind(this);
     this.onResize = this.onResize.bind(this);
   }
@@ -656,11 +657,20 @@ export class MenuController {
   }
 
   async loadWorld(slot, newlyCreated = false) {
+    if (this.loadingWorld) return;
     const world = this.saveManager.getSlot(slot);
     if (!world) return;
-    await this.loading(newlyCreated ? i18n.t("loading.initializing") : i18n.t("loading.restoring"));
-    this.hide();
-    this.startWorld(slot, world);
+    this.loadingWorld = true;
+    const title = newlyCreated ? i18n.t("loading.initializing") : i18n.t("loading.restoring");
+    try {
+      await Promise.all([
+        this.loading(title),
+        this.startWorld(slot, world),
+      ]);
+      this.hide();
+    } finally {
+      this.loadingWorld = false;
+    }
   }
 
   loading(title) {

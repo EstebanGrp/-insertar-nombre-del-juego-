@@ -34,6 +34,9 @@ const PROFILES = Object.freeze({
   }),
 });
 
+const SAMPLE_COUNT = 120;
+const QUALITY_ORDER = Object.freeze(["low", "medium", "high"]);
+
 function detectQuality() {
   const cores = navigator.hardwareConcurrency || 4;
   const memory = navigator.deviceMemory || 4;
@@ -57,7 +60,10 @@ export class PerformanceManager {
     if (!PROFILES[this.baseQuality]) this.baseQuality = "medium";
     this.runtimeQuality = this.baseQuality;
     this.particleSetting = settings.particleQuality || "auto";
-    this.samples = [];
+    this.samples = new Float32Array(SAMPLE_COUNT);
+    this.sampleCursor = 0;
+    this.sampleSize = 0;
+    this.sampleTotal = 0;
     this.frame = 0;
     this.lastEffectAt = new Map();
     this.rebuildProfile();
@@ -74,19 +80,37 @@ export class PerformanceManager {
     document.documentElement.dataset.runtimeQuality = this.runtimeQuality;
   }
 
-  update(delta) {
+  update(delta, active = true) {
     this.frame += 1;
-    if (!Number.isFinite(delta) || delta <= 0 || delta > 250) return;
-    this.samples.push(delta);
-    if (this.samples.length > 180) this.samples.shift();
-    if (this.samples.length < 150 || this.requestedQuality !== "auto") return;
+    if (!active || !Number.isFinite(delta) || delta <= 0 || delta > 250) return false;
 
-    const average = this.samples.reduce((sum, value) => sum + value, 0) / this.samples.length;
-    if (average > 28 && this.runtimeQuality !== "low") {
-      this.runtimeQuality = this.runtimeQuality === "high" ? "medium" : "low";
-      this.samples.length = 0;
-      this.rebuildProfile();
+    if (this.sampleSize === SAMPLE_COUNT) {
+      this.sampleTotal -= this.samples[this.sampleCursor];
+    } else {
+      this.sampleSize += 1;
     }
+    this.samples[this.sampleCursor] = delta;
+    this.sampleTotal += delta;
+    this.sampleCursor = (this.sampleCursor + 1) % SAMPLE_COUNT;
+
+    if (
+      this.sampleSize < SAMPLE_COUNT ||
+      this.requestedQuality !== "auto" ||
+      this.frame % 30 !== 0
+    ) {
+      return false;
+    }
+
+    const average = this.sampleTotal / this.sampleSize;
+    if (average <= 24 || this.runtimeQuality === "low") return false;
+
+    const currentIndex = QUALITY_ORDER.indexOf(this.runtimeQuality);
+    this.runtimeQuality = QUALITY_ORDER[Math.max(0, currentIndex - 1)];
+    this.sampleSize = 0;
+    this.sampleTotal = 0;
+    this.sampleCursor = 0;
+    this.rebuildProfile();
+    return true;
   }
 
   particleCount(baseCount, minimum = 1) {

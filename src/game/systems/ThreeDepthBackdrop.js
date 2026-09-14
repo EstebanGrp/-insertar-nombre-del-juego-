@@ -30,6 +30,7 @@ export class ThreeDepthBackdrop {
       this.createRenderer();
       this.createScene();
       this.resize();
+      this.renderer.render(this.scene, this.camera);
       this.resizeHandler = () => this.resize();
       this.scene2d.scale.on("resize", this.resizeHandler);
       this.active = true;
@@ -215,6 +216,14 @@ export class ThreeDepthBackdrop {
     this.renderer.setSize(width, height, false);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
+  }
+
+  setQuality(quality) {
+    if (!this.active || !["low", "medium", "high"].includes(quality)) return;
+    this.quality = quality;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, quality === "high" ? 1.5 : 1));
+    if (this.scene?.fog) this.scene.fog.density = quality === "low" ? 0.055 : 0.042;
+    this.resize();
   }
 
   update(time, scrollX, worldWidth, paused = false) {
