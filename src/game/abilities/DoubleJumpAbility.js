@@ -16,6 +16,7 @@ export class DoubleJumpAbility {
     player.jumpsUsed = player.maxJumps;
     player.jumpBufferedAt = -Infinity;
     player.canAirDash = true;
+    player.playBodyMotion(1.16, 0.86, 175, "Back.Out");
     player.scene.spawnDoubleJumpEffect(player.sprite.x, player.sprite.y + 18);
     player.scene.achievements?.increment("jumps");
     player.scene.achievements?.increment("doubleJumps");

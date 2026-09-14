@@ -110,6 +110,7 @@ export class GhostPlayer {
 
       if (!this.wasGrounded && body.velocity.y > 150) {
         this.scene.spawnLandingEffect(this.sprite.x, this.sprite.y + 25);
+        this.playBodyMotion(1.14, 0.82, 150, "Back.Out");
       }
     } else {
       this.spirit = Math.min(this.maxSpirit, this.spirit + 0.08);
@@ -251,6 +252,20 @@ export class GhostPlayer {
     }
 
     this.sprite.anims.play(horizontal !== 0 ? "ghost-run" : "ghost-idle", true);
+  }
+
+  playBodyMotion(scaleX, scaleY, duration = 140, ease = "Sine.Out") {
+    if (!this.sprite?.active) return;
+    this.scene.tweens.killTweensOf(this.sprite, "scaleX");
+    this.scene.tweens.killTweensOf(this.sprite, "scaleY");
+    this.sprite.setScale(scaleX, scaleY);
+    this.scene.tweens.add({
+      targets: this.sprite,
+      scaleX: 1,
+      scaleY: 1,
+      duration,
+      ease,
+    });
   }
 
   attack(time) {

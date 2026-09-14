@@ -46,7 +46,7 @@ const game = new Phaser.Game({
   width: window.innerWidth,
   height: window.innerHeight,
   resolution: 1,
-  backgroundColor: "#020a0f",
+  transparent: true,
   pixelArt: false,
   antialias: false,
   roundPixels: true,

@@ -8,6 +8,7 @@ import { Hud } from "../ui/Hud.js";
 import { AchievementManager } from "../systems/AchievementManager.js";
 import { PerformanceManager } from "../systems/PerformanceManager.js";
 import { ProceduralBackdrop } from "../systems/ProceduralBackdrop.js";
+import { ThreeDepthBackdrop } from "../systems/ThreeDepthBackdrop.js";
 import { ForgeSystem } from "../systems/ForgeSystem.js";
 import { SecretRoomSystem } from "../systems/SecretRoomSystem.js";
 import { LearningDocumentSystem } from "../../learning/LearningDocumentSystem.js";
@@ -169,7 +170,7 @@ export class GameScene extends Phaser.Scene {
     this.createProjectileSystems();
 
     this.cameras.main.setBounds(0, 0, this.layout.width, this.layout.height);
-    this.cameras.main.setBackgroundColor("#020a0f");
+    this.cameras.main.setBackgroundColor("rgba(0, 0, 0, 0)");
     this.cameras.main.startFollow(this.player.sprite, true, 0.095, 0.095);
     this.cameras.main.setZoom(1.08);
 
@@ -343,6 +344,11 @@ export class GameScene extends Phaser.Scene {
 
   createWorldVisuals() {
     this.physics.world.setBounds(0, 0, this.layout.width, this.layout.height);
+    this.depthBackdrop = new ThreeDepthBackdrop(
+      this,
+      this.definition,
+      this.performance.profile.quality,
+    );
     this.backdrop = new ProceduralBackdrop(this, this.definition, this.layout.width);
 
     this.ambientParticles = this.add.particles(0, 0, "spirit-particle", {
@@ -666,6 +672,12 @@ export class GameScene extends Phaser.Scene {
   update(time, delta) {
     if (!this.player) return;
     this.performance.update(delta);
+    this.depthBackdrop?.update(
+      time,
+      this.cameras.main.scrollX,
+      this.layout.width,
+      this.isPaused,
+    );
 
     if (Phaser.Input.Keyboard.JustDown(this.keys.pause) && !this.cutsceneActive && !this.learningDocs?.isOpen) {
       this.togglePause();
@@ -1266,6 +1278,7 @@ export class GameScene extends Phaser.Scene {
     this.learningDocs?.destroy();
     this.secretRoom?.destroy();
     this.backdrop?.destroy();
+    this.depthBackdrop?.destroy();
     this.forge?.destroy();
     this.robot?.destroy();
     this.completeOverlay?.remove();

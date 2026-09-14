@@ -50,7 +50,8 @@ export class ProceduralBackdrop {
 
   drawSky(width, height) {
     const sky = this.addLayer(-40, 0);
-    sky.fillGradientStyle(this.palette.sky, this.palette.sky, this.palette.glow, this.palette.glow, 1, 1, 0.82, 0.82);
+    const hybridAlpha = this.scene.depthBackdrop?.active ? 0.26 : 1;
+    sky.fillGradientStyle(this.palette.sky, this.palette.sky, this.palette.glow, this.palette.glow, hybridAlpha, hybridAlpha, hybridAlpha * 0.82, hybridAlpha * 0.82);
     sky.fillRect(0, 0, width, height);
 
     const glow = this.addLayer(-39, 0);

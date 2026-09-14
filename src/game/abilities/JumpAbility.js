@@ -16,6 +16,7 @@ export class JumpAbility {
     player.jumpsUsed = 1;
     player.jumpBufferedAt = -Infinity;
     player.lastGroundedAt = -Infinity;
+    player.playBodyMotion(0.88, 1.13, 150, "Sine.Out");
     player.scene.spawnGhostBurst(player.sprite.x, player.sprite.y + 24, 7);
     player.scene.achievements?.increment("jumps");
     player.scene.achievements?.unlock("first_jump");

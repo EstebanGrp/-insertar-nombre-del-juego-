@@ -99,6 +99,11 @@ canvas { display:block; }
   filter: saturate(1.1) contrast(1.06) brightness(1.02);
 }
 
+#game-root { background: radial-gradient(circle at 70% 35%, #0a3039, #02090f 64%); }
+#game-root > canvas { position: absolute; inset: 0; }
+#game-root > canvas.three-depth-canvas { z-index: 0; pointer-events: none; filter: saturate(1.08) contrast(1.08); }
+#game-root > canvas:not(.three-depth-canvas) { z-index: 1; }
+
 .game-hud {
   position: fixed;
   inset: 0;

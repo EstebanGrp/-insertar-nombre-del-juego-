@@ -51,6 +51,7 @@ export class WallParkourAbility {
     player.wallJumpChain += 1;
     player.canAirDash = true;
     player.isWallSliding = false;
+    player.playBodyMotion(0.84, 1.12, 165, "Sine.Out");
     player.scene.spawnWallJumpEffect(player.sprite.x, player.sprite.y + 8, wallDirection);
     player.scene.achievements?.increment("jumps");
     player.scene.achievements?.increment("wallJumps");
