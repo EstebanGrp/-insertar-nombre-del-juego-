@@ -3,3 +3,4 @@ work-edge/
 *-audit.png
 .DS_Store
 npm-debug.log*
+tools/.build/

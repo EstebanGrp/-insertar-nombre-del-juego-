@@ -33,6 +33,7 @@ export class Hud {
         <div class="hud-mobility">
           <span id="hud-double-jump">${i18n.t("hud.doubleReady")}</span>
           <span id="hud-wall-state">${i18n.t("hud.wallReady")}</span>
+          <span id="hud-forge">${i18n.t("hud.forge", { count: 0 })}</span>
         </div>
       </section>
 
@@ -99,6 +100,11 @@ export class Hud {
     jump.classList.toggle("ready", doubleReady);
     wall.textContent = wallSliding ? i18n.t("hud.wallActive") : i18n.t("hud.wallReady");
     wall.classList.toggle("active", wallSliding);
+  }
+
+  updateForge(count) {
+    const forge = this.root.querySelector("#hud-forge");
+    if (forge) forge.textContent = i18n.t("hud.forge", { count });
   }
 
   updateCampaign({ level, chapter, signals, signalTotal, documents, achievements, achievementTotal, robotActive }) {

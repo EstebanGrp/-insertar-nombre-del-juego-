@@ -34,7 +34,7 @@ function defaultWorld(slotNumber, name = i18n.t("world.default", { slot: slotNum
   const fallbackName = i18n.t("world.default", { slot: slotNumber });
 
   return {
-    version: 8,
+    version: 9,
     slot: slotNumber,
     name: (name.trim() || fallbackName).slice(0, 20).toUpperCase(),
     createdAt: now,
@@ -57,6 +57,11 @@ function defaultWorld(slotNumber, name = i18n.t("world.default", { slot: slotNum
       active: false,
       coreInstalled: false,
       memory: 2,
+    },
+    world: {
+      fragments: 3,
+      destroyedBlocks: {},
+      placedBlocks: {},
     },
     progress: {
       introSeen: false,
@@ -92,10 +97,11 @@ export class SaveManager {
     const normalized = {
       ...base,
       ...data,
-      version: 8,
+      version: 9,
       slot: slotNumber,
       player: { ...base.player, ...(data?.player || {}) },
       robot: { ...base.robot, ...(data?.robot || {}) },
+      world: { ...base.world, ...(data?.world || {}) },
       progress: { ...base.progress, ...oldProgress },
     };
 
@@ -103,6 +109,13 @@ export class SaveManager {
     normalized.player.maxHealth = Math.max(1, normalized.player.maxHealth || 5);
     normalized.player.health = Math.max(1, Math.min(normalized.player.maxHealth, normalized.player.health || normalized.player.maxHealth));
     normalized.player.spirit = Math.max(0, Math.min(100, normalized.player.spirit ?? 100));
+    normalized.world.fragments = Math.max(0, Math.min(12, Number(normalized.world.fragments ?? 3)));
+    normalized.world.destroyedBlocks = normalized.world.destroyedBlocks && typeof normalized.world.destroyedBlocks === "object"
+      ? normalized.world.destroyedBlocks
+      : {};
+    normalized.world.placedBlocks = normalized.world.placedBlocks && typeof normalized.world.placedBlocks === "object"
+      ? normalized.world.placedBlocks
+      : {};
 
     const migratedLevel = oldProgress.bossDefeated
       ? 10

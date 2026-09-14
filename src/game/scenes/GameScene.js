@@ -8,6 +8,7 @@ import { Hud } from "../ui/Hud.js";
 import { AchievementManager } from "../systems/AchievementManager.js";
 import { PerformanceManager } from "../systems/PerformanceManager.js";
 import { ProceduralBackdrop } from "../systems/ProceduralBackdrop.js";
+import { ForgeSystem } from "../systems/ForgeSystem.js";
 import { SecretRoomSystem } from "../systems/SecretRoomSystem.js";
 import { LearningDocumentSystem } from "../../learning/LearningDocumentSystem.js";
 import { i18n } from "../../i18n/I18n.js";
@@ -159,6 +160,7 @@ export class GameScene extends Phaser.Scene {
     );
 
     this.createCheckpoint();
+    this.forge = new ForgeSystem(this, this.definition, this.layout, this.saveData);
     this.secretRoom = new SecretRoomSystem(this, this.definition, this.layout, this.saveData);
     this.createLearningDocument();
     this.createRobotAndCampaignPart();
@@ -315,6 +317,20 @@ export class GameScene extends Phaser.Scene {
       graphics.lineBetween(26, 35, 26, 42);
       graphics.lineBetween(10, 26, 17, 26);
       graphics.lineBetween(35, 26, 42, 26);
+    });
+
+    makeTexture("forge-block", 48, 48, (graphics) => {
+      graphics.fillStyle(0x07141a, 0.98);
+      graphics.fillRoundedRect(1, 1, 46, 46, 5);
+      graphics.lineStyle(2, 0xb8f8ff, 0.82);
+      graphics.strokeRoundedRect(2, 2, 44, 44, 4);
+      graphics.lineStyle(1, 0x58ddea, 0.42);
+      graphics.lineBetween(8, 14, 39, 14);
+      graphics.lineBetween(8, 34, 39, 34);
+      graphics.lineBetween(14, 8, 14, 40);
+      graphics.lineBetween(34, 8, 34, 40);
+      graphics.fillStyle(0xd8ffff, 0.9);
+      graphics.fillCircle(24, 24, 4);
     });
 
     if (!this.textures.exists("spirit-particle")) {
@@ -663,6 +679,7 @@ export class GameScene extends Phaser.Scene {
     if (this.learningDocs?.isOpen || this.levelTransitioning) return;
 
     this.player.update(time);
+    this.forge?.update();
     this.robot?.update(this.player);
 
     this.enemies.forEach((enemy, index) => {
@@ -729,7 +746,12 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.hud.setPrompt("");
+    if (this.forge?.nearest()) {
+      this.hud.setPrompt(i18n.t("prompt.forgeMine"));
+      return;
+    }
+
+    this.hud.setPrompt(i18n.t("prompt.forgePlace"));
   }
 
   inspectRobot() {
@@ -1137,6 +1159,12 @@ export class GameScene extends Phaser.Scene {
     this.saveData.zoneKey = this.definition.theme;
     this.saveData.zone = i18n.t(this.definition.chapter.nameKey);
     this.saveData = this.saveManager.saveWorld(this.slot, this.saveData);
+    // SaveManager normalizes into a new object. Keep every stateful system on the
+    // same reference so progress made after an autosave is never written to a stale copy.
+    if (this.achievements) this.achievements.saveData = this.saveData;
+    if (this.secretRoom) this.secretRoom.saveData = this.saveData;
+    if (this.learningDocs) this.learningDocs.saveData = this.saveData;
+    if (this.forge) this.forge.saveData = this.saveData;
   }
 
   playerDied() {
@@ -1238,6 +1266,7 @@ export class GameScene extends Phaser.Scene {
     this.learningDocs?.destroy();
     this.secretRoom?.destroy();
     this.backdrop?.destroy();
+    this.forge?.destroy();
     this.robot?.destroy();
     this.completeOverlay?.remove();
     this.debugOverlay?.remove();

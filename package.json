@@ -7,7 +7,10 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4177",
-    "play": "node server.cjs"
+    "play": "node server.cjs",
+    "validate:java": "javac -d tools/.build tools/CampaignValidator.java && java -cp tools/.build CampaignValidator",
+    "audit:python": "python tools/asset_audit.py",
+    "verify": "npm run build && npm run validate:java && npm run audit:python"
   },
   "dependencies": {
     "phaser": "3.90.0"
