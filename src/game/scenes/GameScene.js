@@ -7,6 +7,7 @@ import { WardenBoss } from "../entities/WardenBoss.js";
 import { Hud } from "../ui/Hud.js";
 import { AchievementManager } from "../systems/AchievementManager.js";
 import { PerformanceManager } from "../systems/PerformanceManager.js";
+import { ProceduralBackdrop } from "../systems/ProceduralBackdrop.js";
 import { SecretRoomSystem } from "../systems/SecretRoomSystem.js";
 import { LearningDocumentSystem } from "../../learning/LearningDocumentSystem.js";
 import { i18n } from "../../i18n/I18n.js";
@@ -15,25 +16,21 @@ import { buildLevelLayout } from "../campaign/LevelBuilder.js";
 
 const THEME_ASSETS = Object.freeze({
   lab: {
-    background: "story-bg-lab",
     tile: "detail-lab-tile",
     wall: "detail-lab-wall",
     tint: 0x9eefff,
   },
   forest: {
-    background: "story-bg-forest",
     tile: "detail-forest-tile",
     wall: "detail-forest-wall",
     tint: 0xa5ffcf,
   },
   cave: {
-    background: "story-bg-cave",
     tile: "detail-cave-tile",
     wall: "detail-cave-wall",
     tint: 0xc6a2ff,
   },
   future: {
-    background: "story-bg-future",
     tile: "detail-future-tile",
     wall: "detail-future-wall",
     tint: 0x8bc4ff,
@@ -62,13 +59,6 @@ export class GameScene extends Phaser.Scene {
       window.__showGameError?.(i18n.t("error.assetLoad", { asset: file?.key || i18n.t("status.unknown") }));
     });
 
-    this.load.image("lab-bg-far", "assets/game/lab-background-far.png");
-    this.load.image("lab-bg-mid", "assets/game/lab-background-mid.png");
-    this.load.image("lab-fog", "assets/game/lab-fog.png");
-    this.load.image("story-bg-lab", "assets/game/story-bg-lab.png");
-    this.load.image("story-bg-forest", "assets/game/story-bg-forest.png");
-    this.load.image("story-bg-cave", "assets/game/story-bg-cave.png");
-    this.load.image("story-bg-future", "assets/game/story-bg-future.png");
     this.load.image("detail-lab-tile", "assets/game/detail-lab-tile.png");
     this.load.image("detail-lab-wall", "assets/game/detail-lab-wall.png");
     this.load.image("detail-forest-tile", "assets/game/detail-forest-tile.png");
@@ -168,6 +158,7 @@ export class GameScene extends Phaser.Scene {
       (_player, hazard) => this.player.takeDamage(1, hazard.x),
     );
 
+    this.createCheckpoint();
     this.secretRoom = new SecretRoomSystem(this, this.definition, this.layout, this.saveData);
     this.createLearningDocument();
     this.createRobotAndCampaignPart();
@@ -336,39 +327,7 @@ export class GameScene extends Phaser.Scene {
 
   createWorldVisuals() {
     this.physics.world.setBounds(0, 0, this.layout.width, this.layout.height);
-
-    this.backgroundPanels = [630, 1900, 3170].map((x, index) =>
-      this.add
-        .image(x, this.layout.height / 2, this.theme.background)
-        .setDisplaySize(1380, this.layout.height)
-        .setDepth(-34)
-        .setTint(this.theme.tint)
-        .setFlipX(index === 1)
-        .setAlpha(0.76 * this.performance.profile.backgroundOverlayAlpha),
-    );
-
-    this.bgFar = this.add
-      .tileSprite(0, 0, this.layout.width, this.layout.height, "lab-bg-far")
-      .setOrigin(0)
-      .setScrollFactor(0.08)
-      .setAlpha(0.1)
-      .setDepth(-31);
-    this.bgMid = this.add
-      .tileSprite(0, 0, this.layout.width, this.layout.height, "lab-bg-mid")
-      .setOrigin(0)
-      .setScrollFactor(0.2)
-      .setAlpha(0.12)
-      .setDepth(-29);
-    this.bgFog = this.add
-      .tileSprite(0, 0, this.layout.width, this.layout.height, "lab-fog")
-      .setOrigin(0)
-      .setScrollFactor(0.38)
-      .setAlpha(this.performance.profile.fogAlpha)
-      .setDepth(-18);
-
-    this.add
-      .rectangle(this.layout.width / 2, this.layout.height / 2, this.layout.width, this.layout.height, 0x02060a, 0.14)
-      .setDepth(-33);
+    this.backdrop = new ProceduralBackdrop(this, this.definition, this.layout.width);
 
     this.ambientParticles = this.add.particles(0, 0, "spirit-particle", {
       x: { min: 0, max: this.layout.width },
@@ -487,6 +446,28 @@ export class GameScene extends Phaser.Scene {
       },
       TOTAL_LEVELS,
     );
+  }
+
+  createCheckpoint() {
+    const checkpointX = 1900;
+    const checkpointY = this.layout.floorY - 48;
+    this.checkpointActivated = false;
+    this.checkpointSprite = this.physics.add
+      .sprite(checkpointX, checkpointY, "checkpoint")
+      .setDepth(16)
+      .setAlpha(0.58)
+      .setTint(this.definition.accent);
+    this.checkpointSprite.body.setAllowGravity(false);
+    this.checkpointSprite.body.setImmovable(true);
+    this.physics.add.overlap(this.player.sprite, this.checkpointSprite, () => {
+      if (this.checkpointActivated) return;
+      this.checkpointActivated = true;
+      this.player.setCheckpoint(checkpointX, checkpointY - 20);
+      this.checkpointSprite.setAlpha(1).clearTint();
+      this.achievements.unlock("checkpoint");
+      this.spawnGhostBurst(checkpointX, checkpointY, 20, this.definition.accent);
+      this.save();
+    });
   }
 
   createRobotAndCampaignPart() {
@@ -669,9 +650,6 @@ export class GameScene extends Phaser.Scene {
   update(time, delta) {
     if (!this.player) return;
     this.performance.update(delta);
-    this.bgFar.tilePositionX = this.cameras.main.scrollX * 0.12;
-    this.bgMid.tilePositionX = this.cameras.main.scrollX * 0.2;
-    this.bgFog.tilePositionX = this.cameras.main.scrollX * 0.34 + time * 0.005;
 
     if (Phaser.Input.Keyboard.JustDown(this.keys.pause) && !this.cutsceneActive && !this.learningDocs?.isOpen) {
       this.togglePause();
@@ -756,7 +734,7 @@ export class GameScene extends Phaser.Scene {
 
   inspectRobot() {
     if (!this.robot) return;
-    this.robot.discovered = true;
+    this.robot.markDiscovered();
     this.saveData.robot.discovered = true;
     this.robot.gesture("core", 1500);
     this.achievements.unlock("robot_found");
@@ -1259,6 +1237,8 @@ export class GameScene extends Phaser.Scene {
     this.hidePause();
     this.learningDocs?.destroy();
     this.secretRoom?.destroy();
+    this.backdrop?.destroy();
+    this.robot?.destroy();
     this.completeOverlay?.remove();
     this.debugOverlay?.remove();
     this.player?.aura?.destroy();

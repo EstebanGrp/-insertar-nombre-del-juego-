@@ -34,7 +34,7 @@ function createServer(port) {
   const server = http.createServer((req, res) => {
     if (req.url === "/health") {
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true, version: "0.11.0" }));
+      res.end(JSON.stringify({ ok: true, version: "0.12.0" }));
       return;
     }
 
@@ -64,7 +64,7 @@ function createServer(port) {
 
   server.listen(port, host, () => {
     const url = `http://${host}:${port}`;
-    console.log(`PUBLIC DEMO 0.11 READY: ${url}`);
+    console.log(`UMBRAFORGE 0.12 READY: ${url}`);
     console.log("Keep this window open while playing.");
     if (process.platform === "win32") spawn("cmd", ["/c", "start", "", url], { detached: true, stdio: "ignore" }).unref();
   });

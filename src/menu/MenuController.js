@@ -1,6 +1,6 @@
 import { MAX_WORLDS } from "../shared/SaveManager.js";
 import { i18n, LANGUAGE_ORDER } from "../i18n/I18n.js";
-import { CHAPTERS, TOTAL_LEVELS, getChapter } from "../game/campaign/LevelCatalog.js";
+import { CHAPTERS, LEVELS_PER_CHAPTER, TOTAL_LEVELS, getChapter } from "../game/campaign/LevelCatalog.js";
 
 const TEAM = [
   ["EstebanGrp_", "credits.programming"],
@@ -81,6 +81,15 @@ export class MenuController {
   shell(content) {
     const slots = this.saveManager.getSlots();
     const memory = Math.max(2, ...slots.map((slot) => slot?.robot?.memory ?? 2));
+    const activeWorlds = slots.filter(Boolean);
+    const mostAdvanced = activeWorlds.sort(
+      (a, b) => (b.progress?.currentLevel || 1) - (a.progress?.currentLevel || 1),
+    )[0];
+    const robotOnline = Boolean(mostAdvanced?.robot?.active);
+    const realityOnline = (mostAdvanced?.progress?.currentLevel || 1) > 25;
+    const origin = mostAdvanced
+      ? i18n.t(getChapter(mostAdvanced.progress?.currentLevel || 1).nameKey)
+      : i18n.t("status.unknown");
     const motionClass = this.settings.motion ? "" : "reduced-motion";
     const layoutClass = this.view === "main" ? "menu-main-layout" : "menu-sub-layout";
     this.root.innerHTML = `
@@ -88,16 +97,17 @@ export class MenuController {
         <div class="menu-bg"></div><div class="menu-shadow"></div>
         <div class="core-glow"></div><div class="core-ring r1"></div><div class="core-ring r2"></div>
         ${this.settings.scanlines ? '<div class="scanlines"></div>' : ""}
+        <div class="menu-brand">${escapeHtml(i18n.t("app.title"))}<small>${escapeHtml(i18n.t("app.tagline"))}</small></div>
         <div class="menu-build">${i18n.t("app.build")}</div>
         <div class="menu-left-stack">
           <aside class="status-panel">
             <div class="status-head">&gt; ${i18n.t("status.header")}</div>
             <div class="status-row"><span>${i18n.t("status.signal")}</span><b class="online">${i18n.t("status.online")}</b></div>
             <div class="status-row"><span>${i18n.t("status.memory")}</span><b>${String(memory).padStart(2, "0")}%</b></div>
-            <div class="status-row"><span>${i18n.t("status.voice")}</span><b>${i18n.t("status.offline")}</b></div>
+            <div class="status-row"><span>${i18n.t("status.voice")}</span><b class="${robotOnline ? "online" : ""}">${i18n.t(robotOnline ? "status.online" : "status.offline")}</b></div>
             <div class="status-row"><span>${i18n.t("status.host")}</span><b>${i18n.t("status.humanEcho")}</b></div>
-            <div class="status-row"><span>${i18n.t("status.reality")}</span><b>${i18n.t("status.locked")}</b></div>
-            <div class="status-row"><span>${i18n.t("status.origin")}</span><b>${i18n.t("status.unknown")}</b></div>
+            <div class="status-row"><span>${i18n.t("status.reality")}</span><b class="${realityOnline ? "online" : ""}">${i18n.t(realityOnline ? "status.online" : "status.locked")}</b></div>
+            <div class="status-row"><span>${i18n.t("status.origin")}</span><b>${escapeHtml(origin)}</b></div>
           </aside>
           <main class="menu-view">${content}</main>
         </div>
@@ -571,8 +581,8 @@ export class MenuController {
     const currentLevel = world?.progress?.currentLevel || 1;
     const highest = world?.progress?.highestUnlockedLevel || currentLevel;
     const cards = CHAPTERS.map((chapter, index) => {
-      const start = index * 10 + 1;
-      const end = start + 9;
+      const start = index * LEVELS_PER_CHAPTER + 1;
+      const end = start + LEVELS_PER_CHAPTER - 1;
       const unlocked = highest >= start;
       const current = currentLevel >= start && currentLevel <= end;
       return `<article class="campaign-chapter-card ${unlocked ? "unlocked" : "locked"} ${current ? "current" : ""}">

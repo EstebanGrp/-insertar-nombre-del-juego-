@@ -1,5 +1,5 @@
 import { i18n } from "../../i18n/I18n.js";
-import { TOTAL_LEVELS } from "../campaign/LevelCatalog.js";
+import { CHAPTERS, TOTAL_LEVELS } from "../campaign/LevelCatalog.js";
 
 export class Hud {
   constructor(scene) {
@@ -24,7 +24,7 @@ export class Hud {
         </div>
         <div class="hud-campaign-grid">
           <div><span>${i18n.t("hud.level")}</span><b id="hud-level">001 / ${TOTAL_LEVELS}</b></div>
-          <div><span>${i18n.t("hud.chapter")}</span><b id="hud-chapter">01 / 10</b></div>
+          <div><span>${i18n.t("hud.chapter")}</span><b id="hud-chapter">01 / ${CHAPTERS.length}</b></div>
           <div><span>${i18n.t("hud.secretSignals")}</span><b id="hud-signals">0 / 1</b></div>
           <div><span>${i18n.t("hud.documents")}</span><b id="hud-docs">0 / ${TOTAL_LEVELS}</b></div>
           <div><span>${i18n.t("hud.achievements")}</span><b id="hud-achievements">0 / 25</b></div>
@@ -104,7 +104,7 @@ export class Hud {
   updateCampaign({ level, chapter, signals, signalTotal, documents, achievements, achievementTotal, robotActive }) {
     this.root.querySelector("#hud-level-code").textContent = `L${String(level).padStart(3, "0")}`;
     this.root.querySelector("#hud-level").textContent = `${String(level).padStart(3, "0")} / ${TOTAL_LEVELS}`;
-    this.root.querySelector("#hud-chapter").textContent = `${String(chapter).padStart(2, "0")} / 10`;
+    this.root.querySelector("#hud-chapter").textContent = `${String(chapter).padStart(2, "0")} / ${CHAPTERS.length}`;
     this.root.querySelector("#hud-signals").textContent = `${signals} / ${signalTotal}`;
     this.root.querySelector("#hud-docs").textContent = `${documents} / ${TOTAL_LEVELS}`;
     this.root.querySelector("#hud-achievements").textContent = `${achievements} / ${achievementTotal}`;

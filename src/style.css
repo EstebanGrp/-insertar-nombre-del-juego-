@@ -491,6 +491,32 @@ canvas { display:block; }
 .runtime-error pre { white-space: pre-wrap; color: #b9d9dc; max-height: 40vh; overflow: auto; }
 .runtime-error button { padding: 10px 14px; border: 1px solid #67efff; background: #08222a; color: #dfffff; cursor: pointer; }
 
+.menu-brand {
+  position: absolute;
+  right: clamp(24px, 5vw, 80px);
+  bottom: clamp(42px, 7vh, 82px);
+  color: rgba(210, 253, 255, .82);
+  font-size: clamp(30px, 4.6vw, 74px);
+  letter-spacing: .22em;
+  line-height: 1;
+  text-align: right;
+  text-shadow: 0 0 32px rgba(38, 231, 255, .22);
+  pointer-events: none;
+}
+
+.menu-brand small {
+  display: block;
+  margin-top: 12px;
+  color: rgba(101, 207, 218, .42);
+  font-size: clamp(8px, .72vw, 12px);
+  letter-spacing: .42em;
+}
+
+@media (max-width: 800px) {
+  .menu-brand { right: 18px; bottom: 48px; font-size: 24px; opacity: .35; }
+  .menu-brand small { display: none; }
+}
+
 html[data-language="ja"],
 html[data-language="zh"] {
   font-family: "Yu Gothic UI", "Hiragino Sans", "Microsoft YaHei UI", "Noto Sans CJK JP", sans-serif;

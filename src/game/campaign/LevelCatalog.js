@@ -1,15 +1,11 @@
-export const TOTAL_LEVELS = 100;
-export const LEVELS_PER_CHAPTER = 10;
+export const TOTAL_LEVELS = 30;
+export const LEVELS_PER_CHAPTER = 5;
 
 export const CHAPTERS = Object.freeze([
   { id: "awakening", nameKey: "chapter.awakening", theme: "lab", accent: 0x72efff },
   { id: "rootbound", nameKey: "chapter.rootbound", theme: "forest", accent: 0x83ffc7 },
   { id: "crystal", nameKey: "chapter.crystal", theme: "cave", accent: 0xc99cff },
-  { id: "catacombs", nameKey: "chapter.catacombs", theme: "lab", accent: 0x6dd9ff },
   { id: "brokenCity", nameKey: "chapter.brokenCity", theme: "future", accent: 0x86bfff },
-  { id: "nullOcean", nameKey: "chapter.nullOcean", theme: "cave", accent: 0x6af6ff },
-  { id: "warMemory", nameKey: "chapter.warMemory", theme: "future", accent: 0xff8a98 },
-  { id: "exodus", nameKey: "chapter.exodus", theme: "forest", accent: 0xf0c781 },
   { id: "realityEngine", nameKey: "chapter.realityEngine", theme: "lab", accent: 0xd38cff },
   { id: "originCollapse", nameKey: "chapter.originCollapse", theme: "future", accent: 0xff6f8f },
 ]);
